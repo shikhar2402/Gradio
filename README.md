@@ -1,7 +1,11 @@
 # Gradio
 
+<p align="center">
 
 ![gradio](src/gradio.jpg)
+
+</p>
+
 
 ---
 
