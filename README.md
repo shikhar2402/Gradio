@@ -1,5 +1,7 @@
 # Gradio
-![screenshot]([https://raw.githubusercontent.com/amitmerchant1990/electron-markdownify/master/app/img/markdownify.gif](https://github.com/shikhar2402/Gradio/blob/main/src/gradio.jpg))
+
+
+![gradio](src/gradio.jpg)
 
 ---
 
