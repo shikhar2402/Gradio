@@ -6,6 +6,9 @@
 
 </p>
 
+<p align="center">
+  <img src="src/gradio.jpg" />
+</p>
 
 ---
 
