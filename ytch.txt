@@ -1,0 +1,37 @@
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from pyspark.sql import SparkSession
+
+# Get job arguments
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+
+# Initialize Spark and Glue contexts
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+
+# Set Parquet file paths
+input_path = "s3://your-input-bucket/input-path/"
+output_path = "s3://your-output-bucket/output-path/"
+
+# Read Parquet files from S3
+datasource = glueContext.create_dynamic_frame.from_catalog(database = "your_database", table_name = "your_table")
+
+# Convert DynamicFrame to DataFrame
+data_frame = datasource.toDF()
+
+# Truncate the 'description' column
+data_frame = data_frame.withColumn("description", data_frame["description"].substr(1, 100))
+
+# Convert DataFrame back to DynamicFrame
+transformed_dynamic_frame = DynamicFrame.fromDF(data_frame, glueContext, "transformed_dynamic_frame")
+
+# Write the transformed DynamicFrame back to S3 in Parquet format
+glueContext.write_dynamic_frame.from_catalog(transformed_dynamic_frame, database = "your_database", table_name = "output_table", redshift_tmp_dir=output_path)
+
+# Commit the job
+job.commit()
