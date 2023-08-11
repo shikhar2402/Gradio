@@ -1,37 +1,30 @@
-import sys
-from awsglue.transforms import *
-from awsglue.utils import getResolvedOptions
-from pyspark.context import SparkContext
-from awsglue.context import GlueContext
-from awsglue.job import Job
-from pyspark.sql import SparkSession
+import pyarrow.parquet as pq
+import pandas as pd
+import boto3
 
-# Get job arguments
-args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+# Define your AWS credentials and S3 bucket details
+aws_access_key_id = 'YOUR_ACCESS_KEY_ID'
+aws_secret_access_key = 'YOUR_SECRET_ACCESS_KEY'
+s3_bucket_name = 'your-s3-bucket'
+s3_prefix = 'truncated_data/'
 
-# Initialize Spark and Glue contexts
-sc = SparkContext()
-glueContext = GlueContext(sc)
-spark = glueContext.spark_session
+# Fetch data from Parquet file in S3
+s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+object_key = 'path/to/your/data.parquet'  # Replace with the actual path to your Parquet file in the S3 bucket
+parquet_file = pq.ParquetDataset(f's3://{s3_bucket_name}/{object_key}')
+table = parquet_file.read().to_pandas()
 
-# Set Parquet file paths
-input_path = "s3://your-input-bucket/input-path/"
-output_path = "s3://your-output-bucket/output-path/"
+# Truncate the VARCHAR column
+column_to_truncate = 'description'  # Replace with the actual column name
+max_length = 65535
 
-# Read Parquet files from S3
-datasource = glueContext.create_dynamic_frame.from_catalog(database = "your_database", table_name = "your_table")
+table[column_to_truncate] = table[column_to_truncate].apply(lambda x: x[:max_length])
 
-# Convert DynamicFrame to DataFrame
-data_frame = datasource.toDF()
+# Convert DataFrame back to Arrow Table
+arrow_table = pq.Table.from_pandas(table)
 
-# Truncate the 'description' column
-data_frame = data_frame.withColumn("description", data_frame["description"].substr(1, 100))
+# Write the modified Arrow Table back to Parquet file
+modified_parquet_path = 'modified_data.parquet'  # Replace with your desired modified Parquet file name
+pq.write_table(arrow_table, f's3://{s3_bucket_name}/{s3_prefix}{modified_parquet_path}', use_dictionary=False)
 
-# Convert DataFrame back to DynamicFrame
-transformed_dynamic_frame = DynamicFrame.fromDF(data_frame, glueContext, "transformed_dynamic_frame")
-
-# Write the transformed DynamicFrame back to S3 in Parquet format
-glueContext.write_dynamic_frame.from_catalog(transformed_dynamic_frame, database = "your_database", table_name = "output_table", redshift_tmp_dir=output_path)
-
-# Commit the job
-job.commit()
+print(f'Modified data has been written to s3://{s3_bucket_name}/{s3_prefix}{modified_parquet_path}')
