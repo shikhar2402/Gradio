@@ -115,3 +115,25 @@ glueContext.write_dynamic_frame.from_catalog(transformed_dynamic_frame, database
 
 # Commit the job
 job.commit()
+
+
+
+ from pyspark.sql import SparkSession
+
+# Initialize a Spark session
+spark = SparkSession.builder.appName("ParquetSchema").getOrCreate()
+
+# S3 path to the Parquet file
+s3_parquet_path = "s3a://your-s3-bucket/your-path-to-parquet-file"
+
+# Read the Parquet file into a DataFrame
+parquet_df = spark.read.parquet(s3_parquet_path)
+
+# Get the schema of the DataFrame
+schema = parquet_df.schema
+
+# Print the schema
+schema.printTreeString()
+
+# Stop the Spark session
+spark.stop()
