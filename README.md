@@ -1,4 +1,42 @@
 # Gradio
+import boto3
+
+# Initialize the Glue client
+glue_client = boto3.client('glue', region_name='your-region')
+
+# Specify the S3 path to the table data
+s3_location = 's3://your-s3-bucket/your-table-location'
+
+try:
+    # Create a dummy table in the Glue Data Catalog using the S3 location
+    response = glue_client.create_table(
+        DatabaseName='your-database-name',
+        TableInput={
+            'Name': 'dummy-table',
+            'StorageDescriptor': {
+                'Location': s3_location
+            }
+        }
+    )
+
+    # Get the schema of the dummy table from the AWS Glue Data Catalog
+    response = glue_client.get_table(DatabaseName='your-database-name', Name='dummy-table')
+    
+    # Extract the schema from the response
+    table = response['Table']
+    schema = table['StorageDescriptor']['Columns']
+    
+    # Print the schema details
+    for column in schema:
+        column_name = column['Name']
+        data_type = column['Type']
+        print(f"Column Name: {column_name}, Data Type: {data_type}")
+
+    # Clean up: delete the dummy table
+    glue_client.delete_table(DatabaseName='your-database-name', Name='dummy-table')
+
+except Exception as e:
+    print(f"An error occurred: {e}")
 
 <p align="center">
   <img src="src/gradio.jpg" />
